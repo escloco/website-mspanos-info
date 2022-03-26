@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<!--[if lt IE 8 ]><html class="no-js ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="no-js ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 8)|!(IE)]><!--><html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+
+   <!--- Basic Page Needs
+   ================================================== -->
+   <meta charset="utf-8">
+	<title>Michael Spanos - Blog</title>
+	<meta name="description" content="">
+	<meta name="author" content="">
+
+   <!-- Mobile Specific Metas
+   ================================================== -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<!-- CSS
+    ================================================== -->
+   <link rel="stylesheet" href="css/default.css">
+	<link rel="stylesheet" href="css/layout.css">
+   <link rel="stylesheet" href="css/media-queries.css">
+   <link rel="stylesheet" href="css/magnific-popup.css">
+
+   <!-- Script
+   ================================================== -->
+	<script src="js/modernizr.js"></script>
+
+   <!-- Favicons
+	================================================== -->
+	<link rel="shortcut icon" href="favicon.png" >
+
+</head>
+
+<body>
+
+   <!-- articles
+   ================================================== -->
+   <section id="articles">
+
+      <nav id="nav-wrap">
+
+         <a class="mobile-btn" href="#nav-wrap" title="Show navigation">Show navigation</a>
+	      <a class="mobile-btn" href="#" title="Hide navigation">Hide navigation</a>
+
+         <ul id="nav" class="nav">
+            <li class="current"><a  href="index.html">Home</a></li>
+            <li><a class="smoothscroll" href="#about">About</a></li>
+	         <li><a class="smoothscroll" href="#resume">Resume</a></li>
+            <li><a  href="blog.html">Blog</a></li>
+            <li><a href="Blog1.html">Contact</a></li>
+         </ul> <!-- end #nav -->
+
+      </nav> <!-- end #nav-wrap -->
+
+
+      <h1>Open my home Kubernetes cluster to internet</h1>
+      <p style="margin: 0; color: grey;"><i class="fa fa-user text-gray"></i>&nbsp;&nbsp;Michalis Spanos&nbsp;</p>
+      <p style=" color: grey;"><i class="fa fa-calendar text-gray"></i>&nbsp;&nbsp;15 January 2022</p>
+      <p>After struggling for a few weeks, finally, on my mobile, I could launch my page, that running on my home Kubernetes cluster and hosting on my public domain, with the Chrome browser.</p>
+      <p id="d040" class="pw-post-body-paragraph jf jg ii jh b ji jj jk jl jm jn jo jp jq jr js jt ju jv jw jx jy jz ka kb kc ib gi" data-selectable-paragraph="">Open your home Kubernetes cluster to the internet could be significant. Imagine that you are a freelancer and want to run a demo site for your client for a few days. It can be hosted on your PC, at least they won&rsquo;t complain that your page has a bug because they saw a little red warning text next to the address bar. It also could be your last frontier in freezone before you move them to cloud, until now I still hide my credit card no from Google, AWS and Azure.</p>
+    <figure class="kf kg kh ki ga kj fo fp paragraph-image">
+    <div class="kk kl ct km ea kn" tabindex="0" role="button">
+    <div class="fo fp ke"><img class="ea ko kp" role="presentation" src="https://miro.medium.com/max/1400/1*5mh83E4AsjTa7GrmmUp-Ag.png" alt="" width="700" height="399" /></div>
+    </div>
+    </figure>
+
+    <p id="845d" class="pw-post-body-paragraph jf jg ii jh b ji jj jk jl jm jn jo jp jq jr js jt ju jv jw jx jy jz ka kb kc ib gi" data-selectable-paragraph="">The header pic illustrated my home network setup, and how the incoming requests from internet forward into my Kubernetes cluster, you can jump to next section about the TLS certificate setup if you found that pic was instructive enough.</p>
+    <ul class="">
+    <p id="8503" class="kq kr ii jh b ji jj jm jn jq ks ju kt jy ku kc kv kw kx ky gi" data-selectable-paragraph="">Like an ordinary home network, I has a wireless router connecting to my ISP, behind it is my first-tier private LAN using network address 192.168.1.0/24. My wireless router is also a DHCP server, that assigned an IP address 192.168.1.128/24 to my desktop PC.</p>
+    <p id="f771" class="kq kr ii jh b ji kz jm la jq lb ju lc jy ld kc kv kw kx ky gi" data-selectable-paragraph="">My desktop PC running on Windows 10, it installed with VMWare as the hypervisor. The NAT network managed by the VMWare is my second-tier private LAN using different network address 192.168.24.0/24. The Ubuntu virtual machines were spun up in the second-tier network formed my local Kubernetes cluster, one of the worker nodes was assigned with an IP address 192.168.24.149/24.</p>
+    <p id="bd46" class="kq kr ii jh b ji kz jm la jq lb ju lc jy ld kc kv kw kx ky gi" data-selectable-paragraph="">To open my Kubernetes cluster to the internet (explicitly is to open the Nginx ingress controller running on worker nodes), I configured the port forwarding rules on both wireless router and VMWare&nbsp;hypvisor, it allows incoming requests from internet forwarding to the Nginx ingress controller. In some home routers the ports 80 and 443 are disabled for public use. So you can you use some other port like 8080 and 4443.</p>
+    <p id="6061" class="kq kr ii jh b ji kz jm la jq lb ju lc jy ld kc kv kw kx ky gi" data-selectable-paragraph="">Another critical setting to make the requests through is to add inbound rule into my Windows 10 firewall. The default rule set blocked incoming requests to both Http (80) and Https (443) ports, therefore an allowed-rule is necessary for establishing the connection. </p>
+    <p id="fac6" class="kq kr ii jh b ji kz jm la jq lb ju lc jy ld kc kv kw kx ky gi" data-selectable-paragraph="">Meanwhile, I registered for a domain &ldquo;mspanos.info&rdquo; with the DDNS service come with my ASUS wireless router. I believe those well-known DDNS providers such as Google domain, DynDNS or no-IP are supported by most of the wireless routers in the market.</p>
+    <p id="d141" class="kq kr ii jh b ji kz jm la jq lb ju lc jy ld kc kv kw kx ky gi" data-selectable-paragraph="">Finally, to verify the above settings, I tested the Nginx ingress controller by making request from internet. I tested with&nbsp;my&nbsp;mobile, even no ingress rules&nbsp;had&nbsp;been&nbsp;defined, Nginx can return a 404 page. I also used the canyouseeme.org, the utility page can capture my public IP address and checked whether my both Http and Https ports were opened&nbsp;or&nbsp;not.</p>
+    </ul>
+      
+   </section>
+
+ <!-- footer
+   ================================================== -->
+   <footer>
+
+    <div class="row">
+
+       <div class="twelve columns">
+
+          <ul class="social-links">
+             <li><a href="https://www.linkedin.com/in/michalis-spanos/"><i class="fa fa-linkedin"></i></a></li>
+             <li><a href="mailto:mspanos@outlook.com"><i class="fa fa-envelope"></i></a></li>
+          </ul>
+
+          <ul class="copyright">
+             <li>&copy; Copyright 2022 mspanos</li>
+             <li>Design by <a href="http://www.styleshout.com/" title="Styleshout" target="_blank">Styleshout</a></li>   
+          </ul>
+
+       </div>
+
+       <div id="go-top"><a class="smoothscroll" title="Back to Top" href="#articles"><i class="icon-up-open"></i></a></div>
+
+    </div>
+
+ </footer> <!-- Footer End-->
+
+ <!-- Java Script
+ ================================================== -->
+ <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+ <script>window.jQuery || document.write('<script src="js/jquery-1.10.2.min.js"><\/script>')</script>
+ <script type="text/javascript" src="js/jquery-migrate-1.2.1.min.js"></script>
+
+ <script src="js/jquery.flexslider.js"></script>
+ <script src="js/waypoints.js"></script>
+ <script src="js/jquery.fittext.js"></script>
+ <script src="js/magnific-popup.js"></script>
+ <script src="js/init.js"></script>
+
+</body>
+
+</html>

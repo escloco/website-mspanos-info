@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<!--[if lt IE 8 ]><html class="no-js ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="no-js ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 8)|!(IE)]><!--><html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+
+   <!--- Basic Page Needs
+   ================================================== -->
+   <meta charset="utf-8">
+	<title>Michael Spanos - Blog</title>
+	<meta name="description" content="">
+	<meta name="author" content="">
+
+   <!-- Mobile Specific Metas
+   ================================================== -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<!-- CSS
+    ================================================== -->
+   <link rel="stylesheet" href="css/default.css">
+	<link rel="stylesheet" href="css/layout.css">
+   <link rel="stylesheet" href="css/media-queries.css">
+   <link rel="stylesheet" href="css/magnific-popup.css">
+
+   <!-- Script
+   ================================================== -->
+	<script src="js/modernizr.js"></script>
+
+   <!-- Favicons
+	================================================== -->
+	<link rel="shortcut icon" href="favicon.png" >
+
+</head>
+
+<body>
+
+   <!-- articles
+   ================================================== -->
+   <section id="articles">
+
+      <nav id="nav-wrap">
+
+         <a class="mobile-btn" href="#nav-wrap" title="Show navigation">Show navigation</a>
+	      <a class="mobile-btn" href="#" title="Hide navigation">Hide navigation</a>
+
+         <ul id="nav" class="nav">
+            <li class="current"><a  href="index.html">Home</a></li>
+            <li><a class="smoothscroll" href="#about">About</a></li>
+	         <li><a class="smoothscroll" href="#resume">Resume</a></li>
+            <li><a  href="blog.html">Blog</a></li>
+            <li><a href="Blog1.html">Contact</a></li>
+         </ul> <!-- end #nav -->
+
+      </nav> <!-- end #nav-wrap -->
+
+
+
+      <h1>Install Raspbian Operating-System and prepare the system for Kubernetes</h1>
+      <p style="margin: 0; color: grey;"><i class="fa fa-user text-gray"></i>&nbsp;&nbsp;Michalis Spanos&nbsp;</p>
+      <p style=" color: grey;"><i class="fa fa-calendar text-gray"></i>&nbsp;&nbsp;17 September 2021</p>
+      <h3 id="Introduction"><a href="#Introduction" class="headerlink" title="Introduction"></a>Introduction</h3><p>Fist of all, we need to install and configure <strong>Raspbian Linux Operating System</strong> on each node of the future Kubernetes cluster.</p>
+      <p>Our cluster will be composed of three machines (I might use the terms <em>device</em>, <em>machine</em>, <em>node</em> or <em>host</em>, that’s all the same! a Single-Board Computer used as part of our future cluster):</p>
+      <table>
+      <thead>
+      <tr>
+      <th>Hostname</th>
+      <th>IP</th>
+      <th>Description</th>
+      </tr>
+      </thead>
+      <tbody><tr>
+      <td>kube-master</td>
+      <td>192.168.0.22</td>
+      <td>A Master represents the main node of the cluster responsible of the orchestration. It can act as a worker as well and run applications</td>
+      </tr>
+      <tr>
+      <td>kube-worker1</td>
+      <td>192.168.0.23</td>
+      <td>A Worker is a machine dedicated to run applications only. It is remotely managed by the master node</td>
+      </tr>
+      <tr>
+      <td>kube-worker2</td>
+      <td>192.168.0.24</td>
+      <td>A Worker is a machine dedicated to run applications only. It is remotely managed by the master node</td>
+      </tr>
+      </tbody></table>
+      <p>We are using a Portable SSD connected to the master node and exposed to the worker via NFS to store the volume data.</p>
+      <p><img src="https://ipfs.infura.io/ipfs/QmfAnBjKB9hj2CMikh4c5TVKHLoKABBS5B5yQbSRRXyAtZ"></p>
+      <p><strong>Notes:</strong></p>
+      <ul>
+      <li><em>Do not forget to run each step on each node (unless specified)</em></li>
+      <li><em>We assume here your local network is under 192.168.0.x. You might need to change to match your home network.</em></li>
+      <li><em>If you prefer to use a NAS rather than a SSD, skip the part “Configure the SSD disk share” but configure the NFS client on each machine.</em></li>
+      <li><em>When I refer to the “local machine”, it’s usually your laptop or Desktop PC from where you are reading this.</em></li>
+      </ul>
+      <h3 id="Flash-the-OS-on-the-Micro-SD-card"><a href="#Flash-the-OS-on-the-Micro-SD-card" class="headerlink" title="Flash the OS on the Micro SD card"></a>Flash the OS on the Micro SD card</h3><p><strong>1. Download the latest version of the Raspbian Linux OS for RaspberryPi</strong></p>
+      <p>Go to the <a target="_blank" rel="noopener" href="https://www.raspberrypi.org/downloads/raspbian/">download page</a> and download Raspbian Buster Lite.</p>
+      <ul>
+      <li>Raspbian is a Debian-based computer operating system for Raspberry Pi.</li>
+      <li>Buster Lite is a minimal version of Raspbian that doesn’t contain a Desktop or Recommended software. We can start from a very clean, light and fresh install using this version.</li>
+      </ul>
+      <p><strong>2. Unzip the archive to obtain the image <code>2019-09-26-raspbian-buster-lite.img</code></strong></p>
+      <p><strong>3. Plug an Micro SD Card into your local machine</strong></p>
+      <p><strong>4. Use Etcher and flash the image on the SD card</strong></p>
+      <p>Download <a target="_blank" rel="noopener" href="https://www.balena.io/etcher/">Etcher</a> to flash OS images to SD cards &amp; USB drives, safely and easily.</p>
+      <p>Launch Etcher, select first the image extracted of Raspbian, select the Media (SD card) and click on Flash.</p>
+      <p><img src="https://ipfs.infura.io/ipfs/Qmbq9nv6BGxLcBmLvYAQ8fqCGHRcZewPN8DqSRBJDaHmXm"></p>
+      <p><img src="https://ipfs.infura.io/ipfs/QmSGCN8edA61AuuhTAhAKoa61XmmvUtzCvTGBQsxtyPHBB"></p>
+      <p><strong>5. Once flashed, navigate to the folder /boot of the SD card and create an empty file <code>ssh</code></strong></p>
+      <p>Adding the file named <code>ssh</code> onto the boot partition enables SSH by default.</p>
+      <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> <span class="built_in">cd</span> /media/&lt;USER_ID&gt;/boot</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> touch ssh</span></span><br></pre></td></tr></table></figure>
+      
+      <p><strong>6. Unplug the Micro SD Card from your local machine and plug it to the Raspberry Pi</strong></p>
+      <p><strong>7. Plug the power to the Raspberry Pi as well as an Ethernet cable</strong></p>
+      <h3 id="Power-up-and-connect-via-SSH"><a href="#Power-up-and-connect-via-SSH" class="headerlink" title="Power up and connect via SSH"></a>Power up and connect via SSH</h3><p>After you power up each device, we will attempt to connect from our local machine to the node via SSH. If you are under Linux or MacOS, toy only need to open a new terminal. For Microsoft Windows users, you can download and use <a target="_blank" rel="noopener" href="https://www.putty.org/">Putty</a> as SSH client.</p>
+      <p><strong>1. Determine the device IP address</strong></p>
+      <p>Your network router probably assigns an arbitrary IP address when a device tries to join the network via DHCP. To find the address attributed to the device, you can check either on your router admin panel (usually <a target="_blank" rel="noopener" href="http://192.168.0.1/">http://192.168.0.1</a> assuming your local network is 192.168.0.x) or via a tool like <a target="_blank" rel="noopener" href="https://angryip.org/">angryip</a>.</p>
+      <p><img src="https://ipfs.infura.io/ipfs/QmaGAcRkvbdsco79EDf49rfXzZzJs3c4RSxCHJnT4m5PBw"></p>
+      <p><em>E.g. Virgin Media Hub</em></p>
+      <p>In my case, the device named <em>raspberrypi</em> (hostname) is assigned to the IP address <strong>192.168.0.22</strong>.</p>
+      <p><strong>2. Connect via SSH to the machine</strong></p>
+      <p>From a new terminal (or Putty), execute the following command <code>ssh pi@&lt;IP&gt;</code> to connect remotely to the node. You will be asked to accept to establish the connection (answer <code>yes</code>) and then to enter the password. The default password after a fresh Raspbian installation is <code>raspberry</code> (this will be change after this step).</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">greg@laptop:~$ ssh pi@192.168.0.22</span><br><span class="line"></span><br><span class="line">The authenticity of host &#39;192.168.0.22 (192.168.0.22)&#39; can&#39;t be established.</span><br><span class="line">ECDSA key fingerprint is SHA256:lwJ1ARp4uu94nJdD08HdFj0b8np&#x2F;oTnMGA3q0yApLT0.</span><br><span class="line">Are you sure you want to continue connecting (yes&#x2F;no&#x2F;[fingerprint])? yes</span><br><span class="line">Warning: Permanently added &#39;192.168.0.22&#39; (ECDSA) to the list of known hosts.</span><br><span class="line"></span><br><span class="line">pi@192.168.0.22&#39;s password: raspberry</span><br><span class="line">Linux raspberrypi 4.19.75-v7l+ #1270 SMP Tue Sep 24 18:51:41 BST 2019 armv7l</span><br><span class="line"></span><br><span class="line">The programs included with the Debian GNU&#x2F;Linux system are free software;</span><br><span class="line">the exact distribution terms for each program are described in the</span><br><span class="line">individual files in &#x2F;usr&#x2F;share&#x2F;doc&#x2F;*&#x2F;copyright.</span><br><span class="line"></span><br><span class="line">Debian GNU&#x2F;Linux comes with ABSOLUTELY NO WARRANTY, to the extent</span><br><span class="line">permitted by applicable law.</span><br><span class="line"></span><br><span class="line">SSH is enabled and the default password for the &#39;pi&#39; user has not been changed.</span><br><span class="line">This is a security risk - please login as the &#39;pi&#39; user and type &#39;passwd&#39; to set a new password.</span><br><span class="line"></span><br><span class="line">pi@raspberrypi:~ $</span><br></pre></td></tr></table></figure>
+      
+      <p>Well done, you are now connected remotely to the machine. Do the same for the other machines of the cluster.</p>
+      <h3 id="Configure-the-OS"><a href="#Configure-the-OS" class="headerlink" title="Configure the OS"></a>Configure the OS</h3><p>Before starting installing the Kubernetes cluster, we need to run a few common steps and security checks.</p>
+      <h4 id="Change-password"><a href="#Change-password" class="headerlink" title="Change password"></a>Change password</h4><p>The default password configured by Raspbian is well known, so it is highly recommended to change it to something else only you know:</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">pi@raspberrypi:~ $ passwd</span><br><span class="line"></span><br><span class="line">Changing password for pi.</span><br><span class="line">Current password: raspberry</span><br><span class="line">New password: &lt;new_password&gt;</span><br><span class="line">Retype new password: &lt;new_password&gt;</span><br><span class="line">passwd: password updated successfully</span><br></pre></td></tr></table></figure>
+      
+      
+      
+      <h4 id="Change-hostname"><a href="#Change-hostname" class="headerlink" title="Change hostname"></a>Change hostname</h4><p>As we saw on the router, the default machine hostname is <code>raspberrypi</code>, keeping this could be quite confusing when we’d have two more machines with the same name. To change the hostname, two files needs to be edited:</p>
+      <p><strong>1. Edit the file <code>/etc/hostname</code> and replace <code>raspberrypi</code> by <code>kube-master</code> or <code>kube-worker-x</code></strong></p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pi@raspberrypi:~ $ sudo vi &#x2F;etc&#x2F;hostname</span><br><span class="line"></span><br><span class="line">kube-master</span><br></pre></td></tr></table></figure>
+      
+      <p><em>Struggling with <code>vi</code>? take a look at the <a target="_blank" rel="noopener" href="https://devhints.io/vim">Vim cheat-sheet</a> or alternatively, use nano.</em></p>
+      <p><strong>2. Edit the file <code>/etc/hosts</code> and replace <code>raspberrypi</code> (line 6) by <code>kube-master</code> or <code>kube-worker-x</code></strong></p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">pi@raspberrypi:~ $ sudo vi &#x2F;etc&#x2F;hosts</span><br><span class="line"></span><br><span class="line">127.0.0.1       localhost</span><br><span class="line">::1             localhost ip6-localhost ip6-loopback</span><br><span class="line">ff02::1         ip6-allnodes</span><br><span class="line">ff02::2         ip6-allrouters</span><br><span class="line"></span><br><span class="line">127.0.1.1       kube-master</span><br><span class="line"></span><br></pre></td></tr></table></figure>
+      
+      
+      <h4 id="Upgrade-the-system"><a href="#Upgrade-the-system" class="headerlink" title="Upgrade the system"></a>Upgrade the system</h4><p>To make sure, the system is up-to-date, run the following command to download the latest update and security patches. This step might take a few minutes.</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">pi@raspberrypi:~ $ sudo apt-get update &amp;&amp; sudo apt-get upgrade -y</span><br><span class="line"></span><br><span class="line">Get:1 http:&#x2F;&#x2F;raspbian.raspberrypi.org&#x2F;raspbian buster InRelease [15.0 kB]</span><br><span class="line">Get:2 http:&#x2F;&#x2F;archive.raspberrypi.org&#x2F;debian buster InRelease [25.1 kB]</span><br><span class="line">Get:3 http:&#x2F;&#x2F;raspbian.raspberrypi.org&#x2F;raspbian buster&#x2F;main armhf Packages [13.0 MB]</span><br><span class="line">Get:4 http:&#x2F;&#x2F;archive.raspberrypi.org&#x2F;debian buster&#x2F;main armhf Packages [261 kB]</span><br><span class="line">99% [3 Packages store 0 B]</span><br><span class="line">(...)  </span><br><span class="line">Processing triggers for dbus (1.12.16-1) ...</span><br><span class="line">Processing triggers for install-info (6.5.0.dfsg.1-4+b1) ...</span><br><span class="line">Processing triggers for mime-support (3.62) ...</span><br><span class="line">Processing triggers for libc-bin (2.28-10+rpi1) ...</span><br></pre></td></tr></table></figure>
+      
+      
+      <h4 id="Configure-a-static-IP"><a href="#Configure-a-static-IP" class="headerlink" title="Configure a static IP"></a>Configure a static IP</h4><p>By default, the router assigns a arbitrary IP address to the device which means it is highly possible that the router will assign a new different IP address after a reboot. To avoid to recheck our router, it is possible to assign a static IP to the machine.  </p>
+      <p>Edit the file <code>/etc/dhcpcd.conf</code> and add the four lines below:</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pi@raspberrypi:~ $ sudo vi &#x2F;etc&#x2F;dhcpcd.conf</span><br><span class="line"></span><br><span class="line">interface eth0</span><br><span class="line">static ip_address&#x3D;192.168.0.&lt;X&gt;&#x2F;24</span><br><span class="line">static routers&#x3D;192.168.0.1</span><br><span class="line">static domain_name_servers&#x3D;1.1.1.1</span><br></pre></td></tr></table></figure>
+      
+      <p>PS: This could be also done at the network level via the router admin (DHCP).</p>
+      <h4 id="Enable-container-features"><a href="#Enable-container-features" class="headerlink" title="Enable container features"></a>Enable container features</h4><p>We need to enable <em>container features</em> in the kernel in order to run containers.</p>
+      <p>Edit the file <code>/boot/cmdline.txt</code>:</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pi@raspberrypi:~ $ sudo vi &#x2F;boot&#x2F;cmdline.txt</span><br></pre></td></tr></table></figure>
+      
+      <p>and add the following properties <strong>at the end of the line</strong>:</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">cgroup_enable&#x3D;cpuset cgroup_memory&#x3D;1 cgroup_enable&#x3D;memory</span><br></pre></td></tr></table></figure>
+      
+      
+      <h4 id="Restart-and-connect-to-the-static-IP-with-the-new-password-and-check-the-hostname"><a href="#Restart-and-connect-to-the-static-IP-with-the-new-password-and-check-the-hostname" class="headerlink" title="Restart and connect to the static IP with the new password and check the hostname."></a>Restart and connect to the static IP with the new password and check the hostname.</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">pi@raspberrypi:~ $ sudo reboot</span><br><span class="line"></span><br><span class="line">Connection to 192.168.0.22 closed by remote host.</span><br><span class="line">Connection to 192.168.0.22 closed.</span><br></pre></td></tr></table></figure>
+      
+      <p>Reconnect after a few seconds</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">greg@laptop:~$ ssh pi@192.168.0.22</span><br><span class="line">pi@192.168.0.22&#39;s password: &lt;new_password&gt;</span><br></pre></td></tr></table></figure>
+      
+      <p>Check if the hostname has been updated</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-master:~ $ hostname</span><br><span class="line"></span><br><span class="line">kube-master</span><br></pre></td></tr></table></figure>
+      
+      
+      <h4 id="Firewall"><a href="#Firewall" class="headerlink" title="Firewall"></a>Firewall</h4><p>Switch Debian firewall to legacy config:</p>
+      <figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">$</span><span class="bash"> sudo update-alternatives --<span class="built_in">set</span> iptables /usr/sbin/iptables-legacy</span></span><br><span class="line"><span class="meta">$</span><span class="bash"> sudo update-alternatives --<span class="built_in">set</span> ip6tables /usr/sbin/ip6tables-legacy</span></span><br></pre></td></tr></table></figure>
+      
+      
+      
+      <h3 id="Configure-the-SSD-disk-share"><a href="#Configure-the-SSD-disk-share" class="headerlink" title="Configure the SSD disk share"></a>Configure the SSD disk share</h3><p>As explained during the introduction, I made the choice to connect a portable SSD to the Master node and gave access via NFS to each worker.</p>
+      <p><strong>====== Master node only - Mount the disk and expose a NFS share ======</strong></p>
+      <p><strong>A. Mount the disk to the master</strong></p>
+      <p><strong>1. Plug the SSD to the USB3.0 (blue) port</strong></p>
+      <p><strong>2. Find the disk name (drive)</strong></p>
+      <p>Run the command <code>fdisk -l</code> to list all the connected disks to the system (includes the RAM) and try to identify the SSD. The disk which has a size of <em>465.6 GiB</em> and a model name <em>Portable SSD T5</em> and located into <code>/dev/sda</code> is our SSD.</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-master:~ $ sudo fdisk -l</span><br><span class="line"></span><br><span class="line">Disk &#x2F;dev&#x2F;ram0: 4 MiB, 4194304 bytes, 8192 sectors</span><br><span class="line">Units: sectors of 1 * 512 &#x3D; 512 bytes</span><br><span class="line">Sector size (logical&#x2F;physical): 512 bytes &#x2F; 4096 bytes</span><br><span class="line">I&#x2F;O size (minimum&#x2F;optimal): 4096 bytes &#x2F; 4096 bytes</span><br><span class="line">(...)</span><br><span class="line">Disk &#x2F;dev&#x2F;sda: 465.8 GiB, 500107862016 bytes, 976773168 sectors</span><br><span class="line">Disk model: Portable SSD T5</span><br><span class="line">Units: sectors of 1 * 512 &#x3D; 512 bytes</span><br><span class="line">Sector size (logical&#x2F;physical): 512 bytes &#x2F; 512 bytes</span><br><span class="line">I&#x2F;O size (minimum&#x2F;optimal): 512 bytes &#x2F; 33553920 bytes</span><br><span class="line">Disklabel type: dos</span><br><span class="line">Disk identifier: 0x41d0909f</span><br></pre></td></tr></table></figure>
+      
+      
+      <p><strong>3. Create a partition</strong></p>
+      <p>If your disk is new and freshly out of the package, you will need to create a partition.</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-master:~ $ sudo mkfs.ext4 &#x2F;dev&#x2F;sda</span><br><span class="line"></span><br><span class="line">mke2fs 1.44.5 (15-Dec-2018)</span><br><span class="line">&#x2F;dev&#x2F;sda contains a ext4 file system</span><br><span class="line">	last mounted on &#x2F;mnt&#x2F;ssd on Mon Sep  9 21:06:47 2019</span><br><span class="line">Proceed anyway? (y,N) y</span><br><span class="line">Creating filesystem with 58609664 4k blocks and 14655488 inodes</span><br><span class="line">Filesystem UUID: 5c3a8481-682c-4834-9814-17dba166f591</span><br><span class="line">Superblock backups stored on blocks:</span><br><span class="line">	32768, 98304, 163840, 229376, 294912, 819200, 884736, 1605632, 2654208,</span><br><span class="line">	4096000, 7962624, 11239424, 20480000, 23887872</span><br><span class="line"></span><br><span class="line">Allocating group tables: done                            </span><br><span class="line">Writing inode tables: done                            </span><br><span class="line">Creating journal (262144 blocks):</span><br><span class="line">done</span><br><span class="line">Writing superblocks and filesystem accounting information: done     </span><br></pre></td></tr></table></figure>
+      
+      
+      <p><strong>4. Manually mount the disk</strong></p>
+      <p>You can manually mount the disk to the directory <code>/mnt/ssd</code>.</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-master:~ $ sudo mkdir &#x2F;mnt&#x2F;ssd</span><br><span class="line">pi@kube-master:~ $ sudo chown -R pi:pi &#x2F;mnt&#x2F;ssd&#x2F;</span><br><span class="line">pi@kube-master:~ $ sudo mount &#x2F;dev&#x2F;sda &#x2F;mnt&#x2F;ssd</span><br></pre></td></tr></table></figure>
+      
+      
+      <p><strong>5. Automatically mount the disk on startup</strong></p>
+      <p>Next step consists to configure <code>fstab</code> to automatically mount the disk when the system starts.</p>
+      <p>You first need to find the Unique ID of the disk using the command <code>blkid</code>.</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-master:~ $ sudo blkid</span><br><span class="line"></span><br><span class="line">&#x2F;dev&#x2F;mmcblk0p1: LABEL_FATBOOT&#x3D;&quot;boot&quot; LABEL&#x3D;&quot;boot&quot; UUID&#x3D;&quot;F661-303B&quot; TYPE&#x3D;&quot;vfat&quot; PARTUUID&#x3D;&quot;a91dd8a2-01&quot;</span><br><span class="line">&#x2F;dev&#x2F;mmcblk0p2: LABEL&#x3D;&quot;rootfs&quot; UUID&#x3D;&quot;8d008fde-f12a-47f7-8519-197ea707d3d4&quot; TYPE&#x3D;&quot;ext4&quot; PARTUUID&#x3D;&quot;a91dd8a2-02&quot;</span><br><span class="line">&#x2F;dev&#x2F;mmcblk0: PTUUID&#x3D;&quot;a91dd8a2&quot; PTTYPE&#x3D;&quot;dos&quot;</span><br><span class="line">&#x2F;dev&#x2F;sda: UUID&#x3D;&quot;0ac98c2c-8c32-476b-9009-ffca123a2654&quot; TYPE&#x3D;&quot;ext4&quot;</span><br></pre></td></tr></table></figure>
+      
+      <p>Our SSD located in <code>/dev/sda</code> has a unique ID <code>0ac98c2c-8c32-476b-9009-ffca123a2654</code>.</p>
+      <p>Edit the file <code>/etc/fstab</code> and add the following line to configure auto-mount of the disk on startup.</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-master:~ $ sudo vi &#x2F;etc&#x2F;fstab</span><br></pre></td></tr></table></figure>
+      
+      <p>Add this line at the end:</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">UUID&#x3D;0ac98c2c-8c32-476b-9009-ffca123a2654 &#x2F;mnt&#x2F;ssd ext4 defaults 0 0</span><br></pre></td></tr></table></figure>
+      
+      <p>Reboot the system</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-master:~ $ sudo reboot</span><br></pre></td></tr></table></figure>
+      
+      <p>You can verify the disk is correctly mounted on startup with the following command:</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-master:~ $ df -ha &#x2F;dev&#x2F;sda</span><br><span class="line"></span><br><span class="line">Filesystem      Size  Used Avail Use% Mounted on</span><br><span class="line">&#x2F;dev&#x2F;sda        458G   73M  435G   1% &#x2F;mnt&#x2F;ssd</span><br></pre></td></tr></table></figure>
+      
+      
+      <p><strong>B. Share via NFS Server</strong></p>
+      <p>We now gonna make the directory <code>/mnt/ssd</code> of master accessible to other machines via NFS</p>
+      <p><strong>1. Install the required dependencies</strong></p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-master:~ $ sudo apt-get install nfs-kernel-server -y</span><br></pre></td></tr></table></figure>
+      
+      
+      <p><strong>2. Configure the NFS server</strong></p>
+      <p>Edit the file <code>/etc/exports</code> and add the following line</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-master:~ $ sudo vi &#x2F;etc&#x2F;exports</span><br><span class="line"></span><br><span class="line">&#x2F;mnt&#x2F;ssd *(rw,no_root_squash,insecure,async,no_subtree_check,anonuid&#x3D;1000,anongid&#x3D;1000)</span><br></pre></td></tr></table></figure>
+      
+      
+      <p><strong>3. Start the NFS Server</strong></p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-master:~ $ sudo exportfs -ra</span><br></pre></td></tr></table></figure>
+      
+      
+      
+      <p><strong>====== Worker nodes only - Mount the NFS share ======</strong></p>
+      <p><strong>1. Install the necessary dependencies</strong></p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-worker1:~ $ sudo apt-get install nfs-common -y</span><br></pre></td></tr></table></figure>
+      
+      <p><strong>2. Create the directory to mounty the NFS Share</strong></p>
+      <p>Create the directory <code>/mnt/ssd</code> and set the ownership to <code>pi</code></p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-worker1:~ $ sudo mkdir &#x2F;mnt&#x2F;ssd</span><br><span class="line">pi@kube-worker1:~ $ sudo chown -R pi:pi &#x2F;mnt&#x2F;ssd&#x2F;</span><br></pre></td></tr></table></figure>
+      
+      <p><strong>3. Configure auto-mount of the NFS Share</strong></p>
+      <p>In this step, we will edit <code>/etc/fstab</code> to tell the OS to automatically mount the NFS share into the directory <code>/mnt/ssd</code> when the machine starts.</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-worker1:~ $ sudo vi &#x2F;etc&#x2F;fstab</span><br></pre></td></tr></table></figure>
+      
+      <p>Add the following line where <code>192.168.0.22:/mnt/ssd</code> is the IP of <code>kube-master</code> and the NFS share path.</p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">192.168.0.22:&#x2F;mnt&#x2F;ssd   &#x2F;mnt&#x2F;ssd   nfs    rw  0  0</span><br></pre></td></tr></table></figure>
+      
+      <p><strong>4. Reboot the system</strong></p>
+      <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">pi@kube-worker1:~ $ sudo reboot</span><br></pre></td></tr></table></figure>
+      
+      
+      
+      
+      
+      <h3 id="Conclusion"><a href="#Conclusion" class="headerlink" title="Conclusion"></a>Conclusion</h3><p>To conclude, we now have three secured, up-to-date and operational machines to build a Kubernetes cluster and easily self-host and maintain applications at home!</p>
+      <p>In the <a href="/2020/04/13/install-and-configure-a-kubernetes-cluster-w">next chapter</a>, we will see how to install Kubernetes with <a target="_blank" rel="noopener" href="https://k3s.io/">Rancher <strong>k3s</strong></a> on those three machines and deploy the necessary tools such as Package Manager (helm), Proxy and Load Balancer, Certificate Manager, etc. to safely and efficiently deploy our applications.</p>
+      
+        </div>
+      </article>
+      
+   </section>
+
+ <!-- footer
+   ================================================== -->
+   <footer>
+
+    <div class="row">
+
+       <div class="twelve columns">
+
+          <ul class="social-links">
+             <li><a href="https://www.linkedin.com/in/michalis-spanos/"><i class="fa fa-linkedin"></i></a></li>
+             <li><a href="mailto:mspanos@outlook.com"><i class="fa fa-envelope"></i></a></li>
+          </ul>
+
+          <ul class="copyright">
+             <li>&copy; Copyright 2022 mspanos</li>
+             <li>Design by <a href="http://www.styleshout.com/" title="Styleshout" target="_blank">Styleshout</a></li>   
+          </ul>
+
+       </div>
+
+       <div id="go-top"><a class="smoothscroll" title="Back to Top" href="#articles"><i class="icon-up-open"></i></a></div>
+
+    </div>
+
+ </footer> <!-- Footer End-->
+
+ <!-- Java Script
+ ================================================== -->
+ <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+ <script>window.jQuery || document.write('<script src="js/jquery-1.10.2.min.js"><\/script>')</script>
+ <script type="text/javascript" src="js/jquery-migrate-1.2.1.min.js"></script>
+
+ <script src="js/jquery.flexslider.js"></script>
+ <script src="js/waypoints.js"></script>
+ <script src="js/jquery.fittext.js"></script>
+ <script src="js/magnific-popup.js"></script>
+ <script src="js/init.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<!--[if lt IE 8 ]><html class="no-js ie ie7" lang="en"> <![endif]-->
+<!--[if IE 8 ]><html class="no-js ie ie8" lang="en"> <![endif]-->
+<!--[if (gte IE 8)|!(IE)]><!--><html class="no-js" lang="en"> <!--<![endif]-->
+<head>
+
+   <!--- Basic Page Needs
+   ================================================== -->
+   <meta charset="utf-8">
+	<title>Michael Spanos - Blog</title>
+	<meta name="description" content="">
+	<meta name="author" content="">
+
+   <!-- Mobile Specific Metas
+   ================================================== -->
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+	<!-- CSS
+    ================================================== -->
+   <link rel="stylesheet" href="css/default.css">
+	<link rel="stylesheet" href="css/layout.css">
+   <link rel="stylesheet" href="css/media-queries.css">
+   <link rel="stylesheet" href="css/magnific-popup.css">
+
+   <!-- Script
+   ================================================== -->
+	<script src="js/modernizr.js"></script>
+
+   <!-- Favicons
+	================================================== -->
+	<link rel="shortcut icon" href="favicon.png" >
+
+</head>
+
+<body>
+
+   <!-- articles
+   ================================================== -->
+   <section id="articles">
+
+      <nav id="nav-wrap">
+
+         <a class="mobile-btn" href="#nav-wrap" title="Show navigation">Show navigation</a>
+	      <a class="mobile-btn" href="#" title="Hide navigation">Hide navigation</a>
+
+         <ul id="nav" class="nav">
+            <li class="current"><a  href="index.html">Home</a></li>
+            <li><a class="smoothscroll" href="#about">About</a></li>
+	         <li><a class="smoothscroll" href="#resume">Resume</a></li>
+            <li><a  href="blog.html">Blog</a></li>
+            <li><a href="Blog1.html">Contact</a></li>
+         </ul> <!-- end #nav -->
+
+      </nav> <!-- end #nav-wrap -->
+
+      <article>
+
+         <h1>Create Automatic SSL and DNS from Cloudflare for Kubernetes Ingress Resources</h1>
+
+         <p style="margin: 0; color: grey;"><i class="fa fa-user text-gray"></i>&nbsp;&nbsp;Michalis Spanos&nbsp;</p>
+         <p style=" color: grey;"><i class="fa fa-calendar text-gray"></i>&nbsp;&nbsp;12 February 2022</p>
+
+         <p>There is an amazing post on software architecture named&nbsp;<a href="https://anthonynsimon.com/blog/one-man-saas-architecture/">The Architecture Behind A One-Person Tech Startup</a>&nbsp;which you should check it out. I&rsquo;m almost using same tech architecture for my projects.</p>
+
+         <p>There is one thing however that I want to tweak:</p>
+         
+         <p>Since Cloudflare proxying all external traffic to my Load Balancer(Ingress controlled Load Balancer) with default&nbsp;<em>browser</em>&nbsp;side SSL ceritificate</p>
+         
+         <p><img alt="cloudflare-full-ssl" src="https://images.ctfassets.net/slt3lc6tev37/AVQoALCTVYbAL2sYeBfl6/01dd917f7e6c2b386f542dc936db99bd/hc-import-ssl_tls_flexible.png" style="border-radius:8px" /></p>
+
+         <p>I only need Origin Server TLS certificate for a full SSL tunnel:</p>
+
+         <p><img alt="cloudflare-full-ssl" src="https://images.ctfassets.net/slt3lc6tev37/1ZEJtXrDQElYtSt0ds4eHN/d42b6f5c6d62d66b4379d6a1c152a42e/hc-import-ssl_tls_full.png" style="border-radius:8px" /></p>
+         
+         <p>As Cloudflare mentioned in&nbsp;<a href="https://support.cloudflare.com/hc/en-us/articles/200170416-End-to-end-HTTPS-with-Cloudflare-Part-3-SSL-options">End-to-end HTTPS with Cloudflare - Part 3: SSL options</a>, you can provide your self-signed certificate for&nbsp;<strong>Full</strong>&nbsp;mode or you can provide a&nbsp;<strong>Cloudflare Origin CA certificate</strong>&nbsp;(or a valid certificate purchased from a&nbsp;<a href="https://en.wikipedia.org/wiki/Certificate_authority">CA</a>) to enable&nbsp;<strong>Full (strict)</strong>&nbsp;mode:</p>
+
+         <img src="https://images.ctfassets.net/slt3lc6tev37/71zk4biNrzl8eSIwz12Ok9/ac3c63dcb55e4448dc047bca5d59ff63/hc-import-ssl_tls_full_strict.png" alt="cloudflare-full-ssl" style="border-radius:8px"></img>
+         <p><h2>1. Origin CA</h2></p>
+         <p>OK, We saw what we need but how we&rsquo;re going to issue and add an&nbsp;<strong>Origin CA</strong>&nbsp;ceritificate to our origin server?</p>
+
+         <p>The default way is like this:&nbsp;<a href="https://developers.cloudflare.com/ssl/origin-configuration/origin-ca">Managing Cloudflare Origin CA certificates</a>. Although it&rsquo;s manual, rquires a lot effort and we need to regenerate and revoke our own certificates. We don&rsquo;t like to use this way for our kubernetes clusters for sure.</p>
+
+         <p>&nbsp;</p>
+         <h4>1.1. Installing</h4>
+         <p>Clone the github repo and apply manifests to install Origin CA Issuer to your cluster:</p>
+         <pre style="background-color: #1b1b1b;">
+            <code>$ kubectl create secret generic \
+                origin-ca-key \
+                -n default \
+                --from-literal key=v1.0-FFFFFFF-FFFFFFFF \
+                --dry-run=client \
+                -o yaml &gt; origin-ca-key.yaml</code>
+         </pre>
+         
+         <p>By default the Origin CA Issuer will be deployed in the&nbsp;<code>origin-ca-issuer</code>&nbsp;namespace.</p>
+         <h2>1.2. Adding an OriginIssuer</h2>
+         <p>Get your&nbsp;<strong>Origin CA Key</strong>&nbsp;from&nbsp;<em>API Token</em>&nbsp;section of your Cloudflare dashboard and create a secret yaml for it:</p>
+         <pre style="background-color: #1b1b1b;">
+            <code>$ kubectl create secret generic \
+                origin-ca-key \
+                -n default \
+                --from-literal key=v1.0-FFFFFFF-FFFFFFFF \
+                --dry-run=client \
+                -o yaml &gt; origin-ca-key.yaml</code>
+         </pre>
+         <p>Change default namespace according to your need, then create issuer.yaml like below:</p>
+         
+         <table style="background-color: #1b1b1b;">
+            <tbody>
+               <tr>
+                  <td>
+                  <pre>
+         <code>1
+          2
+          3
+          4
+          5
+          6
+          7
+          8
+          9
+         10
+         11
+         12
+         </code></pre>
+                  </td>
+                  <td>
+                  <pre>
+         <code># issuer.yaml
+         apiVersion: cert-manager.k8s.cloudflare.com/v1
+         kind: OriginIssuer
+         metadata:
+           name: prod-issuer
+           namespace: default
+         spec:
+           requestType: OriginECC
+           auth:
+             serviceKeyRef:
+               name: origin-ca-key
+               key: key</code></pre>
+                  </td>
+               </tr>
+            </tbody>
+         </table>
+
+         <p>Apply these manifests to your cluster:</p>
+
+         <pre style="background-color: #1b1b1b;">
+            <code>$ kubectl apply \
+                -f origin-ca-key.yaml \
+                -f issuer.yaml
+            </code>
+         </pre>
+
+         <p>OriginIssuer resource will be updated once the Origin CA Issuer is ready.
+
+            After that create your Ingress resource like below:
+            
+         </p>
+
+
+         <pre style="background-color: #1b1b1b;">
+            <code># example-ingress.yaml
+         apiVersion: networking/v1
+         kind: Ingress
+         metadata:
+           annotations:
+             kubernetes.io/ingress.class: nginx
+             # ssl certificate
+             cert-manager.io/issuer: prod-issuer
+             cert-manager.io/issuer-kind: OriginIssuer
+             cert-manager.io/issuer-group: cert-manager.k8s.cloudflare.com
+             # dns record
+             external-dns.alpha.kubernetes.io/hostname: example.com
+             external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+           name: example-ingress
+           namespace: default
+         spec:
+           rules:
+             - host: example.com
+               http:
+                 paths:
+                  - pathType: Prefix
+                    path: /
+                    backend:
+                       service:
+                         name: example-svc
+                         port:
+                           number: 80
+           tls:
+             # specifying a host in the TLS section will tell cert-manager what
+             # DNS SANs should be on the created certificate.
+             - hosts:
+                 - example.com
+               # cert-manager will create this secret
+               secretName: example-tls</code>
+         </pre>
+
+         <p>Apply it as well:</p>
+
+         <pre style="background-color: #1b1b1b;">
+            <code>$ kubectl apply -f example-ingress.yaml</code>
+         </pre>
+         <p>&nbsp;</p>
+         <p>Now you got:</p>
+
+	         <p style="margin:0; padding-left: 1cm;">• DNS record for example.com proxied by Cloudflare</p>
+	         <p style="margin:0; padding-left: 1cm;">• SSL certificate for your origin server signed by Cloudflare</p>
+	         <p style="margin:0; padding-left: 1cm;">• Full (strict) mode enabled</p>
+	         <p style="padding-left: 1cm;"><em>• Orange Cloud</em>&nbsp;enabled</p>
+
+         <p>and you&rsquo;re ready to go.</p>
+
+         <p>All done!</p>
+
+
+
+      </article>
+
+
+
+      
+      
+   </section>
+
+ <!-- footer
+   ================================================== -->
+   <footer>
+
+    <div class="row">
+
+       <div class="twelve columns">
+
+          <ul class="social-links">
+             <li><a href="https://www.linkedin.com/in/michalis-spanos/"><i class="fa fa-linkedin"></i></a></li>
+             <li><a href="mailto:mspanos@outlook.com"><i class="fa fa-envelope"></i></a></li>
+          </ul>
+
+          <ul class="copyright">
+             <li>&copy; Copyright 2022 mspanos</li>
+             <li>Design by <a href="http://www.styleshout.com/" title="Styleshout" target="_blank">Styleshout</a></li>   
+          </ul>
+
+       </div>
+
+       <div id="go-top"><a class="smoothscroll" title="Back to Top" href="#articles"><i class="icon-up-open"></i></a></div>
+
+    </div>
+
+ </footer> <!-- Footer End-->
+
+ <!-- Java Script
+ ================================================== -->
+ <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+ <script>window.jQuery || document.write('<script src="js/jquery-1.10.2.min.js"><\/script>')</script>
+ <script type="text/javascript" src="js/jquery-migrate-1.2.1.min.js"></script>
+
+ <script src="js/jquery.flexslider.js"></script>
+ <script src="js/waypoints.js"></script>
+ <script src="js/jquery.fittext.js"></script>
+ <script src="js/magnific-popup.js"></script>
+ <script src="js/init.js"></script>
+
+</body>
+
+</html>
